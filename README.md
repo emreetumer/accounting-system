@@ -344,19 +344,8 @@ Tüm entity'ler için ortak özellikler:
 4. Branch'inizi push edin (`git push origin feature/yeniOzellik`)
 5. Pull Request oluşturun
 
-## 📄 Lisans
-
-Bu proje MIT lisansı altında lisanslanmıştır.
-
-## 📧 İletişim
-
-Proje Linki: [https://github.com/KULLANICI_ADINIZ/accounting-system](https://github.com/KULLANICI_ADINIZ/accounting-system)
-
----
 
 <div align="center">
-
-**Yapım 2025** • Made with ❤️ using **.NET 9.0**
 
 ⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
 
