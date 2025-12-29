@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accounting Realtime Dashboard</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f3f4f6;
+      color: #111827;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    h1 {
+      color: #2563eb;
+      font-size: 1.8rem;
+    }
+    #status {
+      margin: 1rem 0;
+      padding: 0.5rem 1rem;
+      background: #e0f2fe;
+      border-radius: 8px;
+      color: #0369a1;
+      font-weight: 500;
+    }
+    .log {
+      width: 80%;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin-top: 1rem;
+      padding: 1rem;
+    }
+    .event {
+      border-left: 4px solid #2563eb;
+      padding-left: 1rem;
+      margin-bottom: 1rem;
+    }
+    .event h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #2563eb;
+    }
+    .event small {
+      color: #6b7280;
+    }
+    .event pre {
+      background: #f9fafb;
+      border-radius: 5px;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>💼 Accounting Real-Time Dashboard</h1>
+  <div id="status">Bağlantı durumu: <strong>Bağlanıyor...</strong></div>
+
+  <div class="log" id="log">
+    <p>Henüz bir olay yok...</p>
+  </div>
+
+  <script>
+    var statusEl = document.getElementById("status");
+    var logEl = document.getElementById("log");
+
+    var connection = new signalR.HubConnectionBuilder()
+      .withUrl("http://localhost:5199/hubs/notifications") // backend adresin
+      .configureLogging(signalR.LogLevel.Information)
+      .withAutomaticReconnect()
+      .build();
+
+    function addEvent(title, data, color="#2563eb") {
+      const eventDiv = document.createElement("div");
+      eventDiv.className = "event";
+      eventDiv.style.borderLeftColor = color;
+
+      eventDiv.innerHTML = `
+        <h3>${title}</h3>
+        <small>${new Date().toLocaleString()}</small>
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+      `;
+
+      logEl.prepend(eventDiv);
+    }
+
+    //  Event listeners
+    connection.on("InvoiceCreated", (data) => addEvent("🧾 Yeni Fatura Oluşturuldu", data, "#2563eb"));
+    connection.on("PaymentReceived", (data) => addEvent("💰 Ödeme Alındı", data, "#16a34a"));
+    connection.on("CustomerDebtUpdated", (data) => addEvent("💳 Müşteri Borcu Güncellendi", data, "#f59e0b"));
+    connection.on("OverdueInvoiceDetected", (data) => addEvent("⚠️ Vadesi Geçmiş Fatura", data, "#dc2626"));
+
+    //  Bağlantı yönetimi
+    connection.onreconnecting(() => {
+      statusEl.innerHTML = "Bağlantı durumu: <strong style='color:#f59e0b'>Yeniden bağlanıyor...</strong>";
+    });
+    connection.onreconnected(() => {
+      statusEl.innerHTML = "Bağlantı durumu: <strong style='color:#16a34a'>Bağlandı ✅</strong>";
+    });
+    connection.onclose(() => {
+      statusEl.innerHTML = "Bağlantı durumu: <strong style='color:#dc2626'>Koptu ❌</strong>";
+    });
+
+    async function start() {
+      try {
+        await connection.start();
+        statusEl.innerHTML = "Bağlantı durumu: <strong style='color:#16a34a'>Bağlandı ✅</strong>";
+        await connection.invoke("JoinDashboard");
+      } catch (err) {
+        statusEl.innerHTML = "Bağlantı durumu: <strong style='color:#dc2626'>Bağlantı hatası ❌</strong>";
+        console.error(err);
+        setTimeout(start, 3000);
+      }
+    }
+    start();
+  </script>
+</body>
+</html>
